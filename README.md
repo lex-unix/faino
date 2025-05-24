@@ -13,6 +13,12 @@ Transactional deployment tool for containerized applications.
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew install lex-unix/tap/faino
+```
+
 ### From Source
 
 ```bash

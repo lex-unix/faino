@@ -1,0 +1,50 @@
+version: 2
+project_name: faino
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/lex-unix/faino/internal/build.Version={{.Version}}
+    main: ./cmd/faino
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      faino-
+      {{- if eq .Os "darwin" }}mac-
+      {{- else if eq .Os "windows" }}windows-
+      {{- else if eq .Os "linux" }}linux-{{end}}
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "#86" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "0.0.0-{{ .Timestamp }}"
+brews:
+  - repository:
+      owner: lex-unix
+      name: homebrew-tap
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^doc:"
+      - "^test:"
+      - "^ci:"
+      - "^ignore:"
+      - "^example:"
+      - "^wip:"

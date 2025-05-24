@@ -22,7 +22,10 @@ indent_size = 4
 [Makefile]
 indent_style = tab
 
-
 [*.yaml]
+indent_style = space
+indent_size = 2
+
+[*.yml]
 indent_style = space
 indent_size = 2

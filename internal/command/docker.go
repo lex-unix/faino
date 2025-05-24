@@ -29,8 +29,12 @@ func StartContainer(img string) string {
 	return fmt.Sprintf("docker start %s", img)
 }
 
-func RunContainer(img, container string, env []string) string {
-	labels := []string{"--label traefik.enable=true", "--label traefik.http.routers.myapp.entrypoints=web", "--label traefik.http.routers.myapp.rule='PathPrefix(`/`)'"}
+func RunContainer(img, container, service string, env []string) string {
+	labels := []string{"--label traefik.http.routers.%s.entrypoints=web", "--label traefik.http.routers.%s.rule='PathPrefix(`/`)'"}
+	for i := range labels {
+		labels[i] = fmt.Sprintf(labels[i], service)
+	}
+	labels = append(labels, "--label traefik.enable=true")
 	return fmt.Sprintf("docker run -d %s %s --name %s %s", strings.Join(env, " "), strings.Join(labels, " "), container, img)
 }
 

@@ -156,7 +156,7 @@ func (s *SSH) Run(ctx context.Context, cmd string, options ...SessionOption) err
 		if errors.As(runErr, &exitErr) {
 			if exitErr.ExitStatus() == 127 {
 				commandParts := strings.SplitN(cmd, " ", 1)
-				return CmdNotFoundErr{err: exitErr, command: commandParts[0], args: commandParts[1]}
+				return &CmdNotFoundErr{err: exitErr, command: commandParts[0], args: commandParts[1]}
 			}
 		}
 		return runErr
@@ -178,7 +178,7 @@ func (s *SSH) ReadFile(path string) ([]byte, error) {
 	if err != nil {
 		var pipeErr *pipeError
 		// if error is not copying stdout, return read contents
-		if errors.As(err, &pipeErr); pipeErr.fd != fdStdout {
+		if errors.As(err, &pipeErr) && pipeErr.fd != fdStdout {
 			return contents.Bytes(), nil
 		}
 		return nil, err

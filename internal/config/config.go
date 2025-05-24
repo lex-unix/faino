@@ -16,10 +16,9 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Global config instance
+// global config instance
 var cfg *Config
 
-// default values
 const (
 	appName  = "faino"
 	builder  = "faino-hybrid"
@@ -35,7 +34,6 @@ const (
 	defaultRegistryServer = "docker.io"
 )
 
-// Config errors
 var (
 	ErrNotExists = errors.New("config does not exist")
 )
@@ -128,9 +126,11 @@ func Load(f *pflag.FlagSet) (*Config, error) {
 		return nil, err
 	}
 
-	cfg.Secrets = expandEnv(cfg.Secrets)
-	cfg.Env = expandEnv(cfg.Env)
-	cfg.Build.Args = expandEnv(cfg.Build.Args)
+	cfg.Registry.Username = expandEnv(cfg.Registry.Username)
+	cfg.Registry.Password = expandEnv(cfg.Registry.Password)
+	cfg.Secrets = expandMapEnv(cfg.Secrets)
+	cfg.Env = expandMapEnv(cfg.Env)
+	cfg.Build.Args = expandMapEnv(cfg.Build.Args)
 
 	if err := validate(); err != nil {
 		return nil, err
@@ -163,12 +163,17 @@ func Get() *Config {
 	return cfg
 }
 
-func expandEnv(src map[string]string) map[string]string {
+func expandEnv(s string) string {
+	if expanded := os.ExpandEnv(s); expanded != "" {
+		return expanded
+	}
+	return s
+}
+
+func expandMapEnv(src map[string]string) map[string]string {
 	m := maps.Clone(src)
 	for k, v := range m {
-		if expanded := os.ExpandEnv(v); expanded != "" {
-			m[k] = expanded
-		}
+		m[k] = expandEnv(v)
 	}
 	return m
 }

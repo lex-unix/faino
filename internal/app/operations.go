@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lex-unix/faino/internal/command"
+	"github.com/lex-unix/faino/internal/config"
 	"github.com/lex-unix/faino/internal/exec/sshexec"
 	"github.com/lex-unix/faino/internal/txman"
 )
@@ -16,8 +17,9 @@ func PullImage(img string) txman.Callback {
 }
 
 func RunContainer(img, container string, env []string) txman.Callback {
+	service := config.Get().Service
 	return func(ctx context.Context, client sshexec.Service) error {
-		return client.Run(ctx, command.RunContainer(img, container, env))
+		return client.Run(ctx, command.RunContainer(img, container, service, env))
 	}
 }
 

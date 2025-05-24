@@ -3,8 +3,8 @@ package login
 import (
 	"context"
 
-	"github.com/spf13/cobra"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
+	"github.com/spf13/cobra"
 )
 
 func NewCmdLogin(ctx context.Context, f *cliutil.Factory) *cobra.Command {
@@ -17,7 +17,6 @@ func NewCmdLogin(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 				return err
 			}
 
-			err = app.StopProxy(ctx)
 			if err := app.RegistryLogin(ctx); err != nil {
 				return err
 			}

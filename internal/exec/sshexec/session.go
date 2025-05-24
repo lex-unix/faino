@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lex-unix/faino/internal/logging"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
-	"github.com/lex-unix/faino/internal/logging"
 )
 
 func (s *SSH) run(session *ssh.Session, cmd string, opts sessionOptions) error {
@@ -106,7 +106,7 @@ func write(wg *sync.WaitGroup, pipefd fd, in io.WriteCloser, out io.Reader, errC
 	defer in.Close()
 	if _, err := io.Copy(in, out); err != nil {
 		if err != io.EOF {
-			errCh <- pipeError{fd: fdStdin, err: err}
+			errCh <- &pipeError{fd: fdStdin, err: err}
 		}
 	}
 }
@@ -117,11 +117,11 @@ func read(wg *sync.WaitGroup, pipefd fd, in io.Reader, out io.Writer, errCh chan
 	for scanner.Scan() {
 		line := scanner.Text()
 		if _, err := fmt.Fprintln(out, line); err != nil {
-			errCh <- pipeError{fd: pipefd, err: err}
+			errCh <- &pipeError{fd: pipefd, err: err}
 			return
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		errCh <- pipeError{fd: pipefd, err: err}
+		errCh <- &pipeError{fd: pipefd, err: err}
 	}
 }

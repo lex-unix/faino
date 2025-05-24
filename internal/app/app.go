@@ -187,6 +187,15 @@ func (app *App) Deploy(ctx context.Context) error {
 	return nil
 }
 
+func (app *App) Setup(ctx context.Context) error {
+	return app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
+		err := client.Run(ctx, command.Mkdir("~/.faino"))
+		if err != nil {
+			return err
+		}
+		return client.Run(ctx, command.CreateFileWithContents(app.historyFilePath, "[]"))
+	})
+}
 func (app *App) Rollback(ctx context.Context, version string) error {
 	err := app.LoadHistory(ctx)
 	if err != nil {

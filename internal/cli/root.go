@@ -13,6 +13,7 @@ import (
 	proxyCmd "github.com/lex-unix/faino/internal/cli/proxy"
 	registryCmd "github.com/lex-unix/faino/internal/cli/registry"
 	rollbackCmd "github.com/lex-unix/faino/internal/cli/rollback"
+	setupCmd "github.com/lex-unix/faino/internal/cli/setup"
 	"github.com/lex-unix/faino/internal/config"
 	"github.com/lex-unix/faino/internal/logging"
 	"github.com/spf13/cobra"
@@ -28,7 +29,7 @@ func NewRootCmd(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 			if cliutil.IsConfigLoadingEnabled(cmd) {
 				if cfg, err := config.Load(cmd.Flags()); err == nil {
 					if cfg.Debug {
-						logging.SetDefault(logging.New(os.Stderr, logging.LevelDebug))
+						logging.SetDefault(logging.New(os.Stdout, logging.LevelDebug))
 					}
 				} else {
 					return err
@@ -51,6 +52,7 @@ func NewRootCmd(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 	cmd.AddCommand(registryCmd.NewCmdRegistry(ctx, f))
 	cmd.AddCommand(proxyCmd.NewCmdProxy(ctx, f))
 	cmd.AddCommand(initCmd.NewCmdInit(ctx, f))
+	cmd.AddCommand(setupCmd.NewCmdSetup(ctx, f))
 
 	return cmd
 }

@@ -14,17 +14,21 @@ import (
 	registryCmd "github.com/lex-unix/faino/internal/cli/registry"
 	rollbackCmd "github.com/lex-unix/faino/internal/cli/rollback"
 	setupCmd "github.com/lex-unix/faino/internal/cli/setup"
+	versionCmd "github.com/lex-unix/faino/internal/cli/version"
 	"github.com/lex-unix/faino/internal/config"
 	"github.com/lex-unix/faino/internal/logging"
 	"github.com/spf13/cobra"
 )
 
-func NewRootCmd(ctx context.Context, f *cliutil.Factory) *cobra.Command {
+func NewRootCmd(ctx context.Context, f *cliutil.Factory, version string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "faino",
 		Long:          "faino",
 		SilenceUsage:  false,
 		SilenceErrors: true,
+		Annotations: map[string]string{
+			"versionInfo": version,
+		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if cliutil.IsConfigLoadingEnabled(cmd) {
 				if cfg, err := config.Load(cmd.Flags()); err == nil {
@@ -53,6 +57,7 @@ func NewRootCmd(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 	cmd.AddCommand(proxyCmd.NewCmdProxy(ctx, f))
 	cmd.AddCommand(initCmd.NewCmdInit(ctx, f))
 	cmd.AddCommand(setupCmd.NewCmdSetup(ctx, f))
+	cmd.AddCommand(versionCmd.NewCmdVersion())
 
 	return cmd
 }

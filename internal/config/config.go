@@ -126,6 +126,10 @@ func Load(f *pflag.FlagSet) (*Config, error) {
 		return nil, err
 	}
 
+	if cfg.Image == "" {
+		cfg.Image = cfg.Service
+	}
+
 	cfg.Registry.Username = expandEnv(cfg.Registry.Username)
 	cfg.Registry.Password = expandEnv(cfg.Registry.Password)
 	cfg.Secrets = expandMapEnv(cfg.Secrets)
@@ -147,8 +151,7 @@ func validate() error {
 	v := validator.New()
 
 	v.Check(cfg.Service != "", "service", "must include service name")
-	v.Check(cfg.Image != "", "image", "must include name of the image")
-	v.Check(len(cfg.Servers) > 0, "servers", "must provide at leat 1 destination server")
+	v.Check(len(cfg.Servers) > 0, "servers", "must provide at leat 1 remote server")
 	v.Check(cfg.Registry.Username != "", "registry.username", "must provide registry username")
 	v.Check(cfg.Registry.Password != "", "registry.password", "must provide registry password")
 

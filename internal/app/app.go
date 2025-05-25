@@ -76,7 +76,7 @@ func (app *App) Deploy(ctx context.Context) error {
 	// FIXME: should use commit hash for this
 	currentVersion := app.LatestVersion()
 	newVersion := generateRandomString(10)
-	image := fmt.Sprintf("%s/%s:%s", cfg.Registry.Server, cfg.Image, newVersion)
+	image := fmt.Sprintf("%s/%s/%s:%s", cfg.Registry.Server, cfg.Registry.Username, cfg.Image, newVersion)
 	currentContainer := fmt.Sprintf("%s-%s", cfg.Service, currentVersion)
 	newContainer := fmt.Sprintf("%s-%s", cfg.Service, newVersion)
 

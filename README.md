@@ -19,15 +19,11 @@ Transactional deployment tool for containerized applications.
 brew install lex-unix/tap/faino
 ```
 
-### From Source
+### Go
 
 ```bash
-git clone https://github.com/lex-unix/faino.git
-cd faino
-make build
+go install github.com/lex-unix/faino/cmd/faino
 ```
-
-The binary will be available in the `bin/` directory.
 
 ## Quick Start
 
@@ -44,7 +40,6 @@ The binary will be available in the `bin/` directory.
 
     ```yaml
     service: my-app
-    image: my-registry/my-app:latest
     servers:
         - 192.168.1.10
         - 192.168.1.11
@@ -66,7 +61,7 @@ The binary will be available in the `bin/` directory.
 
 ## Transaction Management
 
-Faino manages deployments in a transactional manner. This means that if a deployment step fails on one of the server, Faino will abort pending steps on other servers and begin rollback phase.
+Faino manages deployments in a transactional manner. This means that if a deployment step fails on one of the servers, Faino will abort pending steps on other servers and begin rollback phase.
 This ensures consistency across all target servers.
 
 ## Configuration
@@ -76,7 +71,6 @@ Faino uses a `faino.yaml` configuration file. Here's a complete example:
 ```yaml
 # Application configuration
 service: my-web-app
-image: registry.example.com/my-app:v1.0.0
 
 # Target servers
 servers:
@@ -156,7 +150,7 @@ faino app restart
 faino app show
 
 # Execute command in application container
-faino app exec -- /bin/bash
+faino app exec --interactive --host 192.168.0.1 "/bin/bash"
 ```
 
 ### Proxy Management
@@ -178,7 +172,7 @@ faino proxy show
 faino proxy logs
 
 # Execute command in proxy container
-faino proxy exec -- traefik version
+faino proxy exec "traefik version"
 ```
 
 ## Global Flags
@@ -192,13 +186,13 @@ faino proxy exec -- traefik version
 ### Required Fields
 
 - `service`: Name of your service/application
-- `image`: Docker image name and tag
 - `servers`: List of target servers
 - `registry.username`: Registry username
 - `registry.password`: Registry password
 
 ### Optional Fields
 
+- `image`: Docker image name (defaults to service name if not specified)
 - `ssh.user`: SSH user (default: "root")
 - `ssh.port`: SSH port (default: 22)
 - `registry.server`: Registry server (default: "docker.io")

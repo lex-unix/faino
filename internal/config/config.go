@@ -151,7 +151,7 @@ func validate(cfg *Config) error {
 	v.Check(len(cfg.Servers) > 0, "servers", "must provide at leat 1 remote server")
 	v.Check(cfg.Registry.Username != "", "registry.username", "must provide registry username")
 	v.Check(cfg.Registry.Password != "", "registry.password", "must provide registry password")
-	v.Check(validator.In(cfg.Build.Driver, "docker", "docker-container"), "build.driver", "valid driver is eiter docker or docker-container")
+	v.Check(validator.In(cfg.Build.Driver, "docker", "docker-container"), "build.driver", "valid driver is either docker or docker-container")
 	if cfg.Build.Driver == "docker" {
 		v.Check(len(cfg.Build.Arch) <= 1, "build.arch", "docker driver only supports single architecture builds, use docker-container driver for multi-arch")
 	}

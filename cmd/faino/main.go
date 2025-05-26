@@ -26,7 +26,7 @@ func main() {
 	if err := rootCmd.Execute(); err != nil {
 		var validationErr *validator.Validator
 		if errors.As(err, &validationErr) {
-			fmt.Println("found errors in your configuration file:\n")
+			fmt.Println("Found errors in your configuration file:")
 			for field, errMsg := range validationErr.Errors {
 				fmt.Printf("%s -> %s\n", field, errMsg)
 			}

@@ -2,35 +2,33 @@ package command
 
 import (
 	"fmt"
-	"strings"
 )
 
-func BuildImage(
-	img string,
-	dockerfile string,
-	platform string,
-	secrets map[string]string,
-	buildArgs map[string]string,
-) string {
-	var sb strings.Builder
-	sb.WriteString("docker buildx build --push --builder faino-hybrid -t ")
-	sb.WriteString(img)
-	sb.WriteString(fmt.Sprintf(" --platform %s", platform))
-	for k := range secrets {
-		sb.WriteString(fmt.Sprintf(" --secret id=%s", k))
-	}
-	for k, v := range buildArgs {
-		sb.WriteString(fmt.Sprintf(" --build-arg %s=%q", k, v))
-	}
-	sb.WriteString(" ")
-	sb.WriteString(dockerfile)
-
-	return sb.String()
-}
 func ListBuilders(builder string) string {
 	return fmt.Sprintf("docker buildx ls")
 }
 
-func CreateBuilder(builder string, driver string, platform string) string {
-	return fmt.Sprintf("docker buildx create --bootstrap --platform %s --name %s --driver %s", platform, builder, driver)
+func CreateBuilder(builder string, driver string, arch []string) string {
+	return fmt.Sprintf("docker buildx create --bootstrap --platform %s --name %s --driver %s", platformFromArch(arch), builder, driver)
+}
+
+func BuildImage(
+	img string,
+	dockerfile string,
+	arch []string,
+	secrets map[string]string,
+	buildArgs map[string]string,
+	dockerDriver string,
+
+) string {
+	return Docker(
+		"buildx build --push -t",
+		img,
+		"--platform",
+		platformFromArch(arch),
+		unless(dockerDriver == "docker", "--builder faino-hybrid"),
+		expandSecrets(secrets),
+		expandBuildArgs(buildArgs),
+		dockerfile,
+	)
 }

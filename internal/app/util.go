@@ -3,10 +3,12 @@ package app
 import (
 	"fmt"
 	"strings"
+
+	"al.essio.dev/pkg/shellescape"
 )
 
 func formatArg(k string, v any) string {
-	return fmt.Sprintf("--%s=%v", k, v)
+	return fmt.Sprintf("--%s=%s", k, shellescape.Quote(fmt.Sprint(v)))
 }
 
 func formatArgs(argmap map[string]any) string {
@@ -18,7 +20,7 @@ func formatArgs(argmap map[string]any) string {
 }
 
 func formatFlag(f, k string, v any) string {
-	return fmt.Sprintf("--%s %s=%v", f, k, v)
+	return fmt.Sprintf("--%s %s=%v", f, k, shellescape.Quote(fmt.Sprint(v)))
 }
 
 func formatFlags(f string, flagmap map[string]any) string {
@@ -27,4 +29,10 @@ func formatFlags(f string, flagmap map[string]any) string {
 		flags = append(flags, formatFlag(f, k, v))
 	}
 	return strings.Join(flags, " ")
+}
+
+
+
+func IsDockerDriver(driver string) bool {
+	return driver == "docker"
 }

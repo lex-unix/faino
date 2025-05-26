@@ -3,85 +3,70 @@ services:
     shared:
         build:
             context: docker/shared
-            dockerfile: Dockerfile
         volumes:
             - shared:/shared
         networks:
-            - app-network
-
-    vm1:
-        privileged: true
-        build:
-            context: docker/vm
-            dockerfile: Dockerfile
-        volumes:
-            - shared:/shared
-        networks:
-            - app-network
-        depends_on:
-            - shared
-
-    vm2:
-        privileged: true
-        build:
-            context: docker/vm
-            dockerfile: Dockerfile
-        volumes:
-            - shared:/shared
-        networks:
-            - app-network
-        depends_on:
-            - shared
+            - faino-network
 
     deployer:
         privileged: true
         build:
             context: docker/deployer
-            dockerfile: Dockerfile
         volumes:
             - ../..:/faino
             - shared:/shared
             - registry:/registry
         networks:
-            - app-network
+            - faino-network
         depends_on:
-            - shared
             - registry
-            - vm1
-            - vm2
 
     registry:
-        build:
-            context: docker/registry
-            dockerfile: Dockerfile
-        environment:
-            - REGISTRY_HTTP_ADDR=0.0.0.0:4443
-            - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt
-            - REGISTRY_HTTP_TLS_KEY=/certs/domain.key
-        volumes:
-            - shared:/shared
-            - registry:/var/lib/registry/
-        depends_on:
-            - shared
-        networks:
-            - app-network
+      build:
+        context: docker/registry
+      environment:
+        - REGISTRY_HTTP_ADDR=0.0.0.0:4443
+        - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt
+        - REGISTRY_HTTP_TLS_KEY=/certs/domain.key
+      volumes:
+        - shared:/shared
+        - registry:/var/lib/registry/
+      networks:
+        - faino-network
+
+    vm1:
+      privileged: true
+      build:
+        context: docker/vm
+      volumes:
+        - shared:/shared
+      networks:
+        - faino-network
+
+    vm2:
+      privileged: true
+      build:
+        context: docker/vm
+      volumes:
+        - shared:/shared
+      networks:
+        - faino-network
 
     loadbalancer:
         build:
             context: docker/loadbalancer
-            dockerfile: Dockerfile
         ports:
             - 3000:80
         depends_on:
             - vm1
             - vm2
         networks:
-            - app-network
-
-networks:
-    app-network:
-        driver: bridge
+            - faino-network
 
 volumes:
     shared:
     registry:
+
+networks:
+    faino-network:
+        driver: bridge

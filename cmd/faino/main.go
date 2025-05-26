@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +12,7 @@ import (
 	"github.com/lex-unix/faino/internal/cli"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
 	"github.com/lex-unix/faino/internal/logging"
+	"github.com/lex-unix/faino/internal/validator"
 )
 
 func main() {
@@ -21,7 +24,15 @@ func main() {
 	f := cliutil.New()
 	rootCmd := cli.NewRootCmd(ctx, f, buildVersion)
 	if err := rootCmd.Execute(); err != nil {
-		logging.Errorf("command failed: %s", err)
+		var validationErr *validator.Validator
+		if errors.As(err, &validationErr) {
+			fmt.Println("found errors in your configuration file:\n")
+			for field, errMsg := range validationErr.Errors {
+				fmt.Printf("%s -> %s\n", field, errMsg)
+			}
+		} else {
+			logging.Errorf("command failed: %s", err)
+		}
 		os.Exit(1)
 	}
 }

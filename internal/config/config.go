@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -20,12 +21,11 @@ import (
 var cfg *Config
 
 const (
-	appName  = "faino"
-	builder  = "faino-hybrid"
-	platform = "linux/amd64,linux/arm64"
-	driver   = "docker-container"
+	appName = "faino"
+	builder = "faino-hybrid"
 
 	// config defaults
+	defaultDriver         = "docker-container"
 	defaultDockerfilePath = "."
 	defaultSSHPort        = 22
 	defaultSSHUser        = "root"
@@ -63,9 +63,10 @@ type Transaction struct {
 type Build struct {
 	Dockerfile string            `koanf:"dockerfile"`
 	Args       map[string]string `koanf:"args"`
+	Driver     string            `koanf:"driver"`
+	Secrets    map[string]string `koanf:"secrets"`
+	Arch       []string          `koanf:"arch"`
 	Builder    string
-	Platform   string
-	Driver     string
 }
 
 type Config struct {
@@ -80,7 +81,6 @@ type Config struct {
 	Proxy       Proxy             `koanf:"proxy"`
 	Build       Build             `koanf:"build"`
 	Debug       bool              `koanf:"debug"`
-	Secrets     map[string]string `koanf:"secrets"`
 	Env         map[string]string `koanf:"env"`
 }
 
@@ -92,7 +92,8 @@ func Load(f *pflag.FlagSet) (*Config, error) {
 	k.Set("ssh.user", defaultSSHUser)
 	k.Set("proxy.container", defaultProxyContainer)
 	k.Set("proxy.image", defaultProxyImage)
-	k.Set("build.dockerfile", ".")
+	k.Set("build.dockerfile", defaultDockerfilePath)
+	k.Set("build.driver", defaultDriver)
 	k.Set("registry.server", defaultRegistryServer)
 	k.Set("debug", false)
 
@@ -116,9 +117,7 @@ func Load(f *pflag.FlagSet) (*Config, error) {
 	cfg = &Config{
 		AppName: appName,
 		Build: Build{
-			Builder:  builder,
-			Platform: platform,
-			Driver:   driver,
+			Builder: builder,
 		},
 	}
 
@@ -126,24 +125,22 @@ func Load(f *pflag.FlagSet) (*Config, error) {
 		return nil, err
 	}
 
-	if cfg.Image == "" {
-		cfg.Image = cfg.Service
+	if err := validate(cfg); err != nil {
+		return nil, err
 	}
+
+	setDefaults(cfg)
 
 	cfg.Registry.Username = expandEnv(cfg.Registry.Username)
 	cfg.Registry.Password = expandEnv(cfg.Registry.Password)
-	cfg.Secrets = expandMapEnv(cfg.Secrets)
+	cfg.Build.Secrets = expandMapEnv(cfg.Build.Secrets)
 	cfg.Env = expandMapEnv(cfg.Env)
 	cfg.Build.Args = expandMapEnv(cfg.Build.Args)
-
-	if err := validate(); err != nil {
-		return nil, err
-	}
 
 	return cfg, nil
 }
 
-func validate() error {
+func validate(cfg *Config) error {
 	if cfg == nil {
 		return errors.New("config not loaded")
 	}
@@ -154,6 +151,13 @@ func validate() error {
 	v.Check(len(cfg.Servers) > 0, "servers", "must provide at leat 1 remote server")
 	v.Check(cfg.Registry.Username != "", "registry.username", "must provide registry username")
 	v.Check(cfg.Registry.Password != "", "registry.password", "must provide registry password")
+	v.Check(validator.In(cfg.Build.Driver, "docker", "docker-container"), "build.driver", "valid driver is eiter docker or docker-container")
+	if cfg.Build.Driver == "docker" {
+		v.Check(len(cfg.Build.Arch) <= 1, "build.arch", "docker driver only supports single architecture builds, use docker-container driver for multi-arch")
+	}
+	for _, arch := range cfg.Build.Arch {
+		v.Check(validator.In(arch, "arm64", "amd64"), "build.arch", fmt.Sprintf("arch %s is invalid, must be either amd64 or arm64", arch))
+	}
 
 	if !v.Valid() {
 		return v
@@ -162,15 +166,30 @@ func validate() error {
 	return nil
 }
 
+func setDefaults(cfg *Config) {
+	if cfg.Image == "" {
+		cfg.Image = cfg.Service
+	}
+
+	if len(cfg.Build.Arch) == 0 {
+		switch cfg.Build.Driver {
+		case "docker":
+			cfg.Build.Arch = []string{runtime.GOARCH}
+		default:
+			cfg.Build.Arch = []string{"amd64", "arm64"}
+		}
+	}
+}
+
 func Get() *Config {
 	return cfg
 }
 
-func expandEnv(s string) string {
-	if expanded := os.ExpandEnv(s); expanded != "" {
+func expandEnv(orig string) string {
+	if expanded := os.ExpandEnv(orig); expanded != "" {
 		return expanded
 	}
-	return s
+	return orig
 }
 
 func expandMapEnv(src map[string]string) map[string]string {

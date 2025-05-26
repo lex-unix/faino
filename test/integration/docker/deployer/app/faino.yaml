@@ -9,5 +9,14 @@ registry:
   username: root
   password: root
 
-traefik:
+build:
+  driver: docker
+
+proxy:
   image: registry:4443/traefik:v3.1
+  labels:
+    traefik.http.routers.catchall.entryPoints: web
+    traefik.http.routers.catchall.rule: 'PathPrefix(`/`)'
+    traefik.http.routers.catchall.service: unavailable
+    traefik.http.routers.catchall.priority: 1
+    traefik.http.services.unavailable.loadbalancer.server.port: 0

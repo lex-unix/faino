@@ -1,10 +1,9 @@
 module github.com/lex-unix/faino
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.24.2
 
 require (
+	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/knadh/koanf/parsers/yaml v1.0.0
 	github.com/knadh/koanf/providers/env v1.1.0
 	github.com/knadh/koanf/providers/file v1.2.0

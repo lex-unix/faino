@@ -30,6 +30,10 @@ func StartContainer(img string) string {
 	return fmt.Sprintf("docker start %s", img)
 }
 
+func RemoveContainer(container string) string {
+	return fmt.Sprintf("docker rm %s", container)
+}
+
 func RunContainer(img, container, service string, env map[string]string) string {
 	return Docker(
 		"run -d",
@@ -48,7 +52,7 @@ func StopContainer(container string) string {
 
 func RunProxy(img string, container string, labels map[string]any, args map[string]any) string {
 	return Docker(
-		"run -d -p 80:80 --volume /var/run/docker.sock:/var/run/docker.sock:ro",
+		"run -d -p 80:80 -p 9000:8080 --volume /var/run/docker.sock:/var/run/docker.sock:ro",
 		"--name", container,
 		"--volume /var/run/docker.sock:/var/run/docker.sock:ro",
 		expandLabels(labels),

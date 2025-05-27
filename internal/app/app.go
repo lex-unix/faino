@@ -386,6 +386,28 @@ func (app *App) CreateConfig() error {
 	return nil
 }
 
+func (app *App) RebootProxy(ctx context.Context) error {
+	cfg := config.Get()
+	return app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
+		err := client.Run(ctx, command.StopContainer(cfg.Proxy.Container))
+		if err != nil {
+			return err
+		}
+
+		err = client.Run(ctx, command.RemoveContainer(cfg.Proxy.Container))
+		if err != nil {
+			return err
+		}
+
+		err = client.Run(ctx, command.RunProxy(cfg.Proxy.Img, cfg.Proxy.Container, cfg.Proxy.Labels, cfg.Proxy.Args))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (app *App) ExecService(ctx context.Context, execCmd string, interactive bool) error {
 	if err := app.LoadHistory(ctx); err != nil {
 		return err

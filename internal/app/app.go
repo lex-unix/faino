@@ -69,15 +69,44 @@ func (app *App) Deploy(ctx context.Context) error {
 
 	// FIXME: should use commit hash for this
 	currentVersion := app.LatestVersion()
+	logging.Debugf("current version of app is %s", currentVersion)
 	newVersion := generateRandomString(10)
+	logging.Debugf("new version of app is %s", currentVersion)
 	image := fmt.Sprintf("%s/%s/%s:%s", cfg.Registry.Server, cfg.Registry.Username, cfg.Image, newVersion)
 	currentContainer := fmt.Sprintf("%s-%s", cfg.Service, currentVersion)
 	newContainer := fmt.Sprintf("%s-%s", cfg.Service, newVersion)
 
-	logging.Infof("current version of app is %s", currentVersion)
-	logging.Infof("new version of app is %s", newVersion)
+	if cfg.Build.Driver != "docker" {
+		// check if builder exists
+		var cmdout bytes.Buffer
+		err := app.lexec.Run(ctx, command.ListBuilders(cfg.Build.Builder), localexec.WithStdout(&cmdout))
+		if err != nil {
+			return err
+		}
 
-	err = app.Push(ctx)
+		// if there is no builder, create it
+		if !strings.Contains(cmdout.String(), cfg.Build.Builder) {
+			logging.Infof("creating new docker builder instance: %s", cfg.Build.Builder)
+			err = app.lexec.Run(ctx, command.CreateBuilder(cfg.Build.Builder, cfg.Build.Driver, cfg.Build.Arch))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	env := make([]string, 0)
+	for k, v := range cfg.Build.Secrets {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	err = app.lexec.Run(ctx, command.BuildImage(
+		image,
+		cfg.Build.Dockerfile,
+		cfg.Build.Arch,
+		cfg.Build.Secrets,
+		cfg.Build.Args,
+		cfg.Build.Driver),
+		localexec.WithEnv(env))
 	if err != nil {
 		return err
 	}
@@ -119,6 +148,11 @@ func (app *App) Deploy(ctx context.Context) error {
 		return err
 	}
 
+	var envs []string
+	for k, v := range cfg.Env {
+		envs = append(envs, fmt.Sprintf("--env %s=%q", k, v))
+	}
+
 	rollback, err := app.txmanager.BeginTransaction(ctx, func(ctx context.Context, tx txman.Transaction) error {
 		err := tx.Do(ctx, PullImage(image), nil)
 		if err != nil {
@@ -148,60 +182,6 @@ func (app *App) Deploy(ctx context.Context) error {
 		if err := rollback(rollbackCtx); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (app *App) Push(ctx context.Context) error {
-	cfg := config.Get()
-
-	err := app.LoadHistory(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to read history at %s: %w", app.historyFilePath, err)
-	}
-
-	// FIXME: should use commit hash for this
-	currentVersion := app.LatestVersion()
-	newVersion := generateRandomString(10)
-	image := fmt.Sprintf("%s/%s/%s:%s", cfg.Registry.Server, cfg.Registry.Username, cfg.Image, newVersion)
-
-	logging.Debugf("current version of app is %s", currentVersion)
-	logging.Debugf("new version of app is %s", newVersion)
-
-	if cfg.Build.Driver != "docker" {
-		// check if builder exists
-		var cmdout bytes.Buffer
-		err := app.lexec.Run(ctx, command.ListBuilders(cfg.Build.Builder), localexec.WithStdout(&cmdout))
-		if err != nil {
-			return err
-		}
-
-		// if there is no builder, create it
-		if !strings.Contains(cmdout.String(), cfg.Build.Builder) {
-			logging.Infof("creating new docker builder instance: %s", cfg.Build.Builder)
-			err = app.lexec.Run(ctx, command.CreateBuilder(cfg.Build.Builder, cfg.Build.Driver, cfg.Build.Arch))
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	env := make([]string, 0)
-	for k, v := range cfg.Build.Secrets {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	err = app.lexec.Run(ctx, command.BuildImage(
-		image,
-		cfg.Build.Dockerfile,
-		cfg.Build.Arch,
-		cfg.Build.Secrets,
-		cfg.Build.Args,
-		cfg.Build.Driver),
-		localexec.WithEnv(env))
-	if err != nil {
-		return err
 	}
 
 	return nil

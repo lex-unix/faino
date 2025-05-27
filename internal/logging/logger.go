@@ -83,76 +83,83 @@ func New(out io.Writer, level Level) *Logger {
 }
 
 func Debug(msg string) {
-	Default().log(LevelDebug, msg)
+	Default().logMessage(LevelDebug, msg)
 }
 
 func Info(msg string) {
-	Default().log(LevelInfo, msg)
+	Default().logMessage(LevelInfo, msg)
 }
 
 func Warn(msg string) {
-	Default().log(LevelWarn, msg)
+	Default().logMessage(LevelWarn, msg)
 }
 
 func Error(msg string) {
-	Default().log(LevelError, msg)
+	Default().logMessage(LevelError, msg)
 }
 
 func DebugHost(host, msg string) {
-	Default().logWithHost(LevelDebug, host, msg)
+	Default().logMessageWithHost(LevelDebug, host, msg)
 }
 
 func InfoHost(host, msg string) {
-	Default().logWithHost(LevelInfo, host, msg)
+	Default().logMessageWithHost(LevelInfo, host, msg)
 }
 
 func WarnHost(host, msg string) {
-	Default().logWithHost(LevelWarn, host, msg)
+	Default().logMessageWithHost(LevelWarn, host, msg)
 }
 
 func ErrorHost(host, msg string) {
-	Default().logWithHost(LevelError, host, msg)
+	Default().logMessageWithHost(LevelError, host, msg)
 }
 
 func Debugf(format string, args ...any) {
-	Default().log(LevelDebug, format, args...)
+	Default().logf(LevelDebug, format, args...)
 }
 
 func Infof(format string, args ...any) {
-	Default().log(LevelInfo, format, args...)
+	Default().logf(LevelInfo, format, args...)
 }
 
 func Warnf(format string, args ...any) {
-	Default().log(LevelWarn, format, args...)
+	Default().logf(LevelWarn, format, args...)
 }
 
 func Errorf(format string, args ...any) {
-	Default().log(LevelError, format, args...)
+	Default().logf(LevelError, format, args...)
 }
 
 func DebugHostf(host, format string, args ...any) {
-	Default().logWithHost(LevelDebug, host, format, args...)
+	Default().logfWithHost(LevelDebug, host, format, args...)
 }
 
 func InfoHostf(host, format string, args ...any) {
-	Default().logWithHost(LevelInfo, host, format, args...)
+	Default().logfWithHost(LevelInfo, host, format, args...)
 }
 
 func WarnHostf(host, format string, args ...any) {
-	Default().logWithHost(LevelWarn, host, format, args...)
+	Default().logfWithHost(LevelWarn, host, format, args...)
 }
 
 func ErrorHostf(host, format string, args ...any) {
-	Default().logWithHost(LevelError, host, format, args...)
+	Default().logfWithHost(LevelError, host, format, args...)
 }
 
-func Flush() {
-	l := Default()
+// logMessage logs a simple message without formatting
+func (l *Logger) logMessage(level Level, msg string) {
+	if level < l.level {
+		return
+	}
+	coloredLevel := level.ColorString()
+	logLine := fmt.Sprintf("%s %s\n", coloredLevel, msg)
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	_, _ = l.out.Write([]byte(logLine))
 }
 
-func (l *Logger) log(level Level, format string, args ...any) {
+// logf logs a formatted message
+func (l *Logger) logf(level Level, format string, args ...any) {
 	if level < l.level {
 		return
 	}
@@ -164,9 +171,17 @@ func (l *Logger) log(level Level, format string, args ...any) {
 	_, _ = l.out.Write([]byte(logLine))
 }
 
-func (l *Logger) logWithHost(level Level, host string, format string, args ...any) {
+// logMessageWithHost logs a simple message with host prefix
+func (l *Logger) logMessageWithHost(level Level, host string, msg string) {
+	hostPart := fmt.Sprintf("[%s]", blueColor(host))
+	fullMsg := fmt.Sprintf("%s %s", hostPart, msg)
+	l.logMessage(level, fullMsg)
+}
+
+// logfWithHost logs a formatted message with host prefix
+func (l *Logger) logfWithHost(level Level, host string, format string, args ...any) {
 	formattedMsg := fmt.Sprintf(format, args...)
 	hostPart := fmt.Sprintf("[%s]", blueColor(host))
-	lineWithHost := fmt.Sprintf("%s %s", hostPart, formattedMsg)
-	l.log(level, lineWithHost)
+	fullMsg := fmt.Sprintf("%s %s", hostPart, formattedMsg)
+	l.logMessage(level, fullMsg)
 }

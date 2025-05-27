@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/spf13/cobra"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
+	"github.com/spf13/cobra"
 )
 
 func NewCmdHistory(ctx context.Context, f *cliutil.Factory) *cobra.Command {

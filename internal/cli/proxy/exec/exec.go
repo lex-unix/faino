@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
+	"github.com/spf13/cobra"
 )
 
 type ExecOptions struct {

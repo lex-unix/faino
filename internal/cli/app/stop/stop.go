@@ -3,9 +3,9 @@ package stop
 import (
 	"context"
 
-	"github.com/spf13/cobra"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
 	"github.com/lex-unix/faino/internal/logging"
+	"github.com/spf13/cobra"
 )
 
 func NewCmdStop(ctx context.Context, f *cliutil.Factory) *cobra.Command {

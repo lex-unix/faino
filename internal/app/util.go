@@ -31,8 +31,6 @@ func formatFlags(f string, flagmap map[string]any) string {
 	return strings.Join(flags, " ")
 }
 
-
-
 func IsDockerDriver(driver string) bool {
 	return driver == "docker"
 }

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/lex-unix/faino/internal/exec/sshexec"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBeginTransactin(t *testing.T) {

@@ -7,9 +7,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/lex-unix/faino/internal/exec/sshexec"
 	"github.com/lex-unix/faino/internal/txman"
+	"github.com/stretchr/testify/assert"
 )
 
 var testHistoryData = []byte(`[

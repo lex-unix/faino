@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
 	"github.com/lex-unix/faino/internal/logging"
+	"github.com/spf13/cobra"
 )
 
 func NewCmdRollback(ctx context.Context, f *cliutil.Factory) *cobra.Command {

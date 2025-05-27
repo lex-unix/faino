@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 
-	"github.com/spf13/cobra"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
 	execCmd "github.com/lex-unix/faino/internal/cli/proxy/exec"
 	logsCmd "github.com/lex-unix/faino/internal/cli/proxy/logs"
@@ -11,6 +10,7 @@ import (
 	showCmd "github.com/lex-unix/faino/internal/cli/proxy/show"
 	startCmd "github.com/lex-unix/faino/internal/cli/proxy/start"
 	stopCmd "github.com/lex-unix/faino/internal/cli/proxy/stop"
+	"github.com/spf13/cobra"
 )
 
 func NewCmdProxy(ctx context.Context, f *cliutil.Factory) *cobra.Command {

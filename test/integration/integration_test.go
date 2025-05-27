@@ -47,7 +47,7 @@ func dockerCompose(t *testing.T, composeCmd string) string {
 		t.Fatal(err)
 	}
 
-	wg.Add(1)
+	wg.Add(2)
 	go read(stdoutPipe, &stdout)
 	go read(stderrPipe, &stderr)
 

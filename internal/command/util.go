@@ -7,19 +7,23 @@ import (
 	"al.essio.dev/pkg/shellescape"
 )
 
+// Docker is a helper function for building long commands that may have conditional args.
+// For simple commands use fmt.
 func Docker(args ...string) string {
-	cmd := []string{"docker"}
+	var sb strings.Builder
+	sb.WriteString("docker")
 	for _, arg := range args {
-		if arg != "" {
-			cmd = append(cmd, arg)
+		if arg == "" {
+			continue
 		}
+		sb.WriteString(" ")
+		sb.WriteString(arg)
 	}
-
-	return strings.Join(cmd, " ")
+	return sb.String()
 }
 
-func unless(cond bool, result string) string {
-	if !cond {
+func when(cond bool, result string) string {
+	if cond {
 		return result
 	}
 	return ""
@@ -33,20 +37,46 @@ func formatFlag(f, k string, v any) string {
 	return fmt.Sprintf("--%s %s=%s", f, k, shellescape.Quote(fmt.Sprint(v)))
 }
 
-func expandSecrets(secrets map[string]string) string {
-	args := make([]string, 0, len(secrets))
-	for k := range secrets {
-		args = append(args, formatFlag("secret", "id", k))
+func formatMap[T any](m map[string]T, formatter func(string, T) string) string {
+	if len(m) == 0 {
+		return ""
 	}
-	return strings.Join(args, " ")
+
+	formatted := make([]string, 0, len(m))
+	for k, v := range m {
+		formatted = append(formatted, formatter(k, v))
+	}
+
+	return strings.Join(formatted, " ")
+}
+
+// TODO: fix types, this is too much spaghetti
+func formatFlags[T any](f string, flags map[string]T) string {
+	return formatMap(flags, func(k string, v T) string {
+		return formatFlag(f, k, v)
+	})
+}
+
+func formatArgs(args map[string]any) string {
+	return formatMap(args, formatArg)
 }
 
 func expandBuildArgs(buildArgs map[string]string) string {
-	args := make([]string, 0, len(buildArgs))
-	for k, v := range buildArgs {
-		args = append(args, formatFlag("build-arg", k, v))
-	}
-	return strings.Join(args, " ")
+	return formatFlags("build-arg", buildArgs)
+}
+
+func expandLabels(labels map[string]any) string {
+	return formatFlags("label", labels)
+}
+
+func expandEnv(env map[string]string) string {
+	return formatFlags("env", env)
+}
+
+func expandSecrets(secrets map[string]string) string {
+	return formatMap(secrets, func(k string, _ string) string {
+		return formatFlag("secret", "id", k)
+	})
 }
 
 func platformFromArch(archs []string) string {
@@ -59,5 +89,4 @@ func platformFromArch(archs []string) string {
 		sb.WriteString(arch)
 	}
 	return sb.String()
-
 }

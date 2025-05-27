@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuild(t *testing.T) {
+func TestBuildImage(t *testing.T) {
 	type args struct {
 		img          string
 		dockerfile   string
@@ -69,7 +69,7 @@ func TestBuild(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Build(
+			got := BuildImage(
 				tt.args.img,
 				tt.args.dockerfile,
 				tt.args.arch,

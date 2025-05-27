@@ -16,7 +16,7 @@ func PullImage(img string) txman.Callback {
 	}
 }
 
-func RunContainer(img, container string, env []string) txman.Callback {
+func RunContainer(img, container string, env map[string]string) txman.Callback {
 	service := config.Get().Service
 	return func(ctx context.Context, client sshexec.Service) error {
 		return client.Run(ctx, command.RunContainer(img, container, service, env))

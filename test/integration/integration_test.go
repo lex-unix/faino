@@ -26,13 +26,16 @@ func dockerCompose(t *testing.T, composeCmd string) string {
 	cmd := exec.Command("sh", "-c", fmt.Sprintf("docker compose %s", composeCmd))
 	var wg sync.WaitGroup
 	var stdout bytes.Buffer
+	var stderr bytes.Buffer
 	stdoutPipe, _ := cmd.StdoutPipe()
+	stderrPipe, _ := cmd.StderrPipe()
 
 	read := func(r io.Reader, w io.Writer) {
 		defer wg.Done()
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
 			line := scanner.Text()
+			t.Log(line)
 			fmt.Fprintln(w, line)
 		}
 		if err := scanner.Err(); err != nil {
@@ -46,6 +49,7 @@ func dockerCompose(t *testing.T, composeCmd string) string {
 
 	wg.Add(1)
 	go read(stdoutPipe, &stdout)
+	go read(stderrPipe, &stderr)
 
 	wg.Wait()
 	if err := cmd.Wait(); err != nil {

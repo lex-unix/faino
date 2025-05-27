@@ -1,15 +1,20 @@
 package command
 
-import (
-	"fmt"
-)
+import ()
 
 func ListBuilders(builder string) string {
-	return fmt.Sprintf("docker buildx ls")
+	return Docker("buildx ls")
 }
 
 func CreateBuilder(builder string, driver string, arch []string) string {
-	return fmt.Sprintf("docker buildx create --bootstrap --platform %s --name %s --driver %s", platformFromArch(arch), builder, driver)
+	return Docker(
+		"buildx create --bootstrap --platform",
+		platformFromArch(arch),
+		"--name",
+		builder,
+		"--driver",
+		driver,
+	)
 }
 
 func BuildImage(
@@ -26,7 +31,7 @@ func BuildImage(
 		img,
 		"--platform",
 		platformFromArch(arch),
-		unless(dockerDriver == "docker", "--builder faino-hybrid"),
+		when(dockerDriver != "docker", "--builder faino-hybrid"),
 		expandSecrets(secrets),
 		expandBuildArgs(buildArgs),
 		dockerfile,

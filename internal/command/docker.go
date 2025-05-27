@@ -2,7 +2,8 @@ package command
 
 import (
 	"fmt"
-	"strings"
+
+	"al.essio.dev/pkg/shellescape"
 )
 
 func IsDockerInstalled() string {
@@ -29,29 +30,31 @@ func StartContainer(img string) string {
 	return fmt.Sprintf("docker start %s", img)
 }
 
-func RunContainer(img, container, service string, env []string) string {
-	labels := []string{"--label traefik.http.routers.%s.entrypoints=web", "--label traefik.http.routers.%s.rule='PathPrefix(`/`)'"}
-	for i := range labels {
-		labels[i] = fmt.Sprintf(labels[i], service)
-	}
-	labels = append(labels, "--label traefik.enable=true")
-	return fmt.Sprintf("docker run -d %s %s --name %s %s", strings.Join(env, " "), strings.Join(labels, " "), container, img)
+func RunContainer(img, container, service string, env map[string]string) string {
+	return Docker(
+		"run -d",
+		expandEnv(env),
+		"--label traefik.enable=true",
+		fmt.Sprintf("--label traefik.http.routers.%s.entrypoints=web", service),
+		fmt.Sprintf("--label --label traefik.http.routers.%s.rule='PathPrefix(`/`)'", service),
+		"--name", container,
+		img,
+	)
 }
 
 func StopContainer(container string) string {
 	return fmt.Sprintf("docker stop %s || true", container)
 }
 
-func LoginToRegistry(user, password, registry string) string {
-	return fmt.Sprintf("docker login -u %s -p %s %s", user, password, registry)
-}
-
-func RunProxy(img, labels, args string) string {
-	return fmt.Sprintf(
-		"docker run -d -p 80:80 --name traefik --volume /var/run/docker.sock:/var/run/docker.sock:ro %s %s --providers.docker --entryPoints.web.address=:80 --accesslog=true %s",
-		labels,
+func RunProxy(img string, container string, labels map[string]any, args map[string]any) string {
+	return Docker(
+		"run -d -p 80:80 --volume /var/run/docker.sock:/var/run/docker.sock:ro",
+		"--name", container,
+		"--volume /var/run/docker.sock:/var/run/docker.sock:ro",
+		expandLabels(labels),
 		img,
-		args,
+		"--providers.docker --entryPoints.web.address=:80 --accesslog=true",
+		formatArgs(args),
 	)
 }
 
@@ -64,28 +67,24 @@ func ListAllContainers() string {
 }
 
 func ContainerLogs(container string, follow bool, lines int, since string) string {
-	var sb strings.Builder
-	sb.WriteString("docker logs")
-
-	if len(since) != 0 {
-		sb.WriteString(" --since ")
-		sb.WriteString(since)
-	}
-	if lines != 0 {
-		sb.WriteString(fmt.Sprintf(" --tail %d", lines))
-	}
-	if follow {
-		sb.WriteString(" --follow")
-	}
-
-	sb.WriteString(" ")
-	sb.WriteString(container)
-
-	return sb.String()
+	return Docker(
+		"logs",
+		when(since != "", fmt.Sprintf("--since %s", since)),
+		when(lines > 0, fmt.Sprintf("--tail %d", lines)),
+		when(follow, "--follow"),
+		container,
+	)
 }
 
 func RegistryLogin(registry, user, password string) string {
-	return fmt.Sprintf("docker login %s -u %s -p %s", registry, user, password)
+	return Docker(
+		"login",
+		"-u",
+		user,
+		"-p",
+		shellescape.Quote(password),
+		registry,
+	)
 }
 
 func RegistryLogout() string {
@@ -93,14 +92,10 @@ func RegistryLogout() string {
 }
 
 func Exec(container string, execCmd string, interactive bool) string {
-	var sb strings.Builder
-	sb.WriteString("docker exec")
-	if interactive {
-		sb.WriteString(" -it")
-	}
-	sb.WriteString(" ")
-	sb.WriteString(container)
-	sb.WriteString(" ")
-	sb.WriteString(execCmd)
-	return sb.String()
+	return Docker(
+		"exec",
+		when(interactive, "-it"),
+		container,
+		execCmd,
+	)
 }

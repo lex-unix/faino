@@ -110,7 +110,7 @@ func (app *App) Deploy(ctx context.Context) error {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	err = app.lexec.Run(ctx, command.Build(
+	err = app.lexec.Run(ctx, command.BuildImage(
 		image,
 		cfg.Build.Dockerfile,
 		cfg.Build.Arch,
@@ -148,7 +148,7 @@ func (app *App) Deploy(ctx context.Context) error {
 		}
 
 		// proxy container not found, run it
-		err = client.Run(ctx, command.RunProxy(cfg.Proxy.Img, formatFlags("label", cfg.Proxy.Labels), formatArgs(cfg.Proxy.Args)))
+		err = client.Run(ctx, command.RunProxy(cfg.Proxy.Img, cfg.Proxy.Container, cfg.Proxy.Labels, cfg.Proxy.Args))
 		if err != nil {
 			return err
 		}
@@ -173,7 +173,7 @@ func (app *App) Deploy(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		err = tx.Do(ctx, RunContainer(image, newContainer, envs), StopContainer(newContainer))
+		err = tx.Do(ctx, RunContainer(image, newContainer, cfg.Env), StopContainer(newContainer))
 		if err != nil {
 			return err
 		}

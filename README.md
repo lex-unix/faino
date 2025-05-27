@@ -95,6 +95,9 @@ build:
     args:
         NODE_ENV: production
         API_URL: ${API_URL}
+    secrets:
+        API_KEY: ${API_KEY}
+        DB_PASSWORD: ${DB_PASSWORD}
 
 # Proxy/Load balancer configuration
 proxy:
@@ -109,11 +112,6 @@ proxy:
 env:
     NODE_ENV: production
     DATABASE_URL: ${DATABASE_URL}
-
-# Secrets (will be expanded from environment variables)
-secrets:
-    API_KEY: ${API_KEY}
-    DB_PASSWORD: ${DB_PASSWORD}
 
 # Debug mode
 debug: false
@@ -198,19 +196,11 @@ faino proxy exec "traefik version"
 - `registry.server`: Registry server (default: "docker.io")
 - `build.dockerfile`: Dockerfile path (default: ".")
 - `build.args`: Build arguments
+- `build.secrets`: Secrets passed to `docker build`
 - `proxy.container`: Proxy container name (default: "traefik")
 - `proxy.image`: Proxy image (default: "traefik:v3.1")
 - `env`: Environment variables passed to `docker run`
-- `secrets`: Secrets passed to `docker build`
 - `debug`: Enable debug mode (default: false)
-
-## Build System
-
-Faino uses Docker Buildx for multi-platform builds with the following defaults:
-
-- Builder: `faino-hybrid`
-- Platform: `linux/amd64,linux/arm64`
-- Driver: `docker-container`
 
 ## Examples
 

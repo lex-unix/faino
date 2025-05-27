@@ -36,7 +36,7 @@ func RunContainer(img, container, service string, env map[string]string) string 
 		expandEnv(env),
 		"--label traefik.enable=true",
 		fmt.Sprintf("--label traefik.http.routers.%s.entrypoints=web", service),
-		fmt.Sprintf("--label --label traefik.http.routers.%s.rule='PathPrefix(`/`)'", service),
+		fmt.Sprintf("--label traefik.http.routers.%s.rule='PathPrefix(`/`)'", service),
 		"--name", container,
 		img,
 	)

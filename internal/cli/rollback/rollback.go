@@ -11,7 +11,7 @@ import (
 
 func NewCmdRollback(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rollback",
+		Use:   "rollback VERSION",
 		Short: "Rollback to your app's desired version",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {

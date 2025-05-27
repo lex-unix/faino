@@ -77,6 +77,6 @@ func appFunc(f *Factory) func() (*app.App, error) {
 			return nil, err
 		}
 		le := localexec.New()
-		return app.New(le, app.WithTxManager(txman)), nil
+		return app.New(le, txman), nil
 	}
 }

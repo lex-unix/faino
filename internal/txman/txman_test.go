@@ -28,7 +28,7 @@ func TestBeginTransactin(t *testing.T) {
 		sshClient2.RunFunc = func(ctx context.Context, cmd string, options ...sshexec.SessionOption) error {
 			mu.Lock()
 			defer mu.Unlock()
-			calls[sshClient2.hostName] = append(calls[sshClient1.hostName], cmd)
+			calls[sshClient2.hostName] = append(calls[sshClient2.hostName], cmd)
 			return nil
 		}
 

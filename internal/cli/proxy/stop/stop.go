@@ -17,7 +17,6 @@ func NewCmdStop(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 				return err
 			}
 
-			err = app.StopProxy(ctx)
 			if err := app.StopProxy(ctx); err != nil {
 				return nil
 			}

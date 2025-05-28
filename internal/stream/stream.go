@@ -9,7 +9,7 @@ import (
 // LineHandler is a function type that processes a single log line.
 type LineHandler func(line []byte)
 
-// ErrorHandler is a function type that handles errors from the stream processor itself.
+// StreamErrHandler is a function type that handles errors from the stream processor itself.
 type StreamErrHandler func(err error)
 
 // Stream is an io.Writer that processes incoming data line by line

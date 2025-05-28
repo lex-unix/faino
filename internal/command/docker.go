@@ -92,7 +92,7 @@ func RegistryLogin(registry, user, password string) string {
 }
 
 func RegistryLogout() string {
-	return fmt.Sprintf("docker logout")
+	return "docker logout"
 }
 
 func Exec(container string, execCmd string, interactive bool) string {

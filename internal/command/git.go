@@ -3,7 +3,7 @@ package command
 import "fmt"
 
 func CommitHash() string {
-	return fmt.Sprintf("git rev-parse --short HEAD")
+	return "git rev-parse --short HEAD"
 }
 
 func CommitMessage() string {

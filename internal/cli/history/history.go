@@ -19,6 +19,10 @@ func NewCmdHistory(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 				return fmt.Errorf("sort value can be either 'desc' or 'asc' and you passed: %s", sortDir)
 			}
 			app, err := f.App()
+			if err != nil {
+				return err
+			}
+
 			history, err := app.History(ctx, sortDir)
 			if err != nil {
 				return err

@@ -2,7 +2,7 @@ package build
 
 import "runtime/debug"
 
-// Build-time parameters set via -ldflags
+// Version is a build-time parameter set via -ldflags
 var Version = "DEV"
 
 func init() {

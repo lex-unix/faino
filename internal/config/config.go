@@ -102,8 +102,8 @@ func Load(f *pflag.FlagSet) (*Config, error) {
 	}
 
 	envToKoanf := func(s string) string {
-		return strings.Replace(
-			strings.ToLower(strings.TrimPrefix(s, "FAINO")), "_", ".", -1)
+		return strings.ReplaceAll(
+			strings.ToLower(strings.TrimPrefix(s, "FAINO")), "_", ".")
 	}
 
 	if err := k.Load(env.Provider("FAINO", ".", envToKoanf), nil); err != nil {

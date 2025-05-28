@@ -70,7 +70,7 @@ func (c Command) Run(ctx context.Context, cmd string, opts ...Option) error {
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			logging.Errorf("faild to read ouput: %s", err)
+			logging.Errorf("faild to read output: %s", err)
 		}
 	}
 

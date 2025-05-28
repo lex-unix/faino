@@ -148,11 +148,6 @@ func (app *App) Deploy(ctx context.Context) error {
 		return err
 	}
 
-	var envs []string
-	for k, v := range cfg.Env {
-		envs = append(envs, fmt.Sprintf("--env %s=%q", k, v))
-	}
-
 	rollback, err := app.txmanager.BeginTransaction(ctx, func(ctx context.Context, tx txman.Transaction) error {
 		err := tx.Do(ctx, PullImage(image), nil)
 		if err != nil {
@@ -196,6 +191,7 @@ func (app *App) Setup(ctx context.Context) error {
 		return client.Run(ctx, command.CreateFileWithContents(app.historyFilePath, "[]"))
 	})
 }
+
 func (app *App) Rollback(ctx context.Context, version string) error {
 	err := app.LoadHistory(ctx)
 	if err != nil {

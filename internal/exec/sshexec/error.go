@@ -20,16 +20,22 @@ func (e pipeError) Error() string {
 	return fmt.Sprintf("%s pipe: %s", d, e.err)
 }
 
-type CmdNotFoundErr struct {
+type CommandError struct {
+	Host    string
+	Msg     string
+	Code    int
+	Command string
 	err     error
-	command string
-	args    string
 }
 
-func (e CmdNotFoundErr) Error() string {
-	return fmt.Sprintf("command %q not found", e.command)
+func (e CommandError) Error() string {
+	return fmt.Sprintf("command %s failed with exit code %d", e.Command, e.Code)
 }
 
-func (e CmdNotFoundErr) Unwrap() error {
+func (e CommandError) Unwrap() error {
 	return e.err
+}
+
+func (e CommandError) NotFound() bool {
+	return e.Code == 127
 }

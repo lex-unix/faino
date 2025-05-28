@@ -9,9 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/lex-unix/faino/internal/logging"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
@@ -44,8 +42,8 @@ type Service interface {
 }
 
 type SSH struct {
-	client *ssh.Client
-	host   string
+	conn *ssh.Client
+	host string
 }
 
 func New(host, user string, port int64) (*SSH, error) {
@@ -97,7 +95,7 @@ func New(host, user string, port int64) (*SSH, error) {
 		return nil, err
 	}
 
-	return &SSH{client: client, host: host}, nil
+	return &SSH{conn: client, host: host}, nil
 }
 
 func (s *SSH) Host() string {
@@ -115,51 +113,12 @@ func (s *SSH) Run(ctx context.Context, cmd string, options ...SessionOption) err
 		opt(&opts)
 	}
 
-	session, err := s.client.NewSession()
+	command, err := newCommand(s, cmd)
 	if err != nil {
 		return err
 	}
-	defer session.Close()
-
-	killedCh := make(chan bool, 1)
-	doneCh := make(chan struct{}, 1)
-	go func() {
-		select {
-		case <-ctx.Done():
-			if err := session.Signal(ssh.SIGTERM); err != nil {
-				logging.ErrorHostf(s.host, "failed to stop command: %s", err)
-			} else {
-				killedCh <- true
-			}
-			return
-		case <-doneCh:
-			killedCh <- false
-			return
-		}
-	}()
-
-	var runErr error
-	if opts.interactive {
-		runErr = s.runInteractiveSession(session, cmd, opts)
-	} else {
-		runErr = s.run(session, cmd, opts)
-	}
-
-	doneCh <- struct{}{}
-
-	if runErr != nil {
-		// command was successfully terminated, don't return error
-		if killed := <-killedCh; killed {
-			return nil
-		}
-		var exitErr *ssh.ExitError
-		if errors.As(runErr, &exitErr) {
-			if exitErr.ExitStatus() == 127 {
-				commandParts := strings.SplitN(cmd, " ", 1)
-				return &CmdNotFoundErr{err: exitErr, command: commandParts[0], args: commandParts[1]}
-			}
-		}
-		return runErr
+	if err := command.execute(ctx, opts); err != nil {
+		return err
 	}
 	return nil
 }
@@ -167,13 +126,14 @@ func (s *SSH) Run(ctx context.Context, cmd string, options ...SessionOption) err
 func (s *SSH) WriteFile(path string, data []byte) error {
 	r := bytes.NewReader(data)
 	cmd := fmt.Sprintf("cat > %s", path)
+	// pass Background context to finish writing file
 	return s.Run(context.Background(), cmd, WithStdin(r))
 }
 
 func (s *SSH) ReadFile(path string) ([]byte, error) {
 	var contents bytes.Buffer
 	cmd := fmt.Sprintf("cat %s", path)
-	// pass noop context to finish reading file
+	// pass background context to finish reading file
 	err := s.Run(context.Background(), cmd, WithStdout(&contents))
 	if err != nil {
 		var pipeErr *pipeError

@@ -24,7 +24,7 @@ func NewRootCmd(ctx context.Context, f *cliutil.Factory, version string) *cobra.
 	cmd := &cobra.Command{
 		Use:           "faino",
 		Long:          "faino",
-		SilenceUsage:  false,
+		SilenceUsage:  true,
 		SilenceErrors: true,
 		Annotations: map[string]string{
 			"versionInfo": version,

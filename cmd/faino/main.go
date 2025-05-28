@@ -11,6 +11,7 @@ import (
 	"github.com/lex-unix/faino/internal/build"
 	"github.com/lex-unix/faino/internal/cli"
 	"github.com/lex-unix/faino/internal/cli/cliutil"
+	"github.com/lex-unix/faino/internal/exec/sshexec"
 	"github.com/lex-unix/faino/internal/logging"
 	"github.com/lex-unix/faino/internal/validator"
 )
@@ -25,13 +26,17 @@ func main() {
 	rootCmd := cli.NewRootCmd(ctx, f, buildVersion)
 	if err := rootCmd.Execute(); err != nil {
 		var validationErr *validator.Validator
+		var sshCmdErr *sshexec.CommandError
 		if errors.As(err, &validationErr) {
-			fmt.Println("Found errors in your configuration file:")
+			logging.Error("Configuration file is invalid")
 			for field, errMsg := range validationErr.Errors {
 				fmt.Printf("%s -> %s\n", field, errMsg)
 			}
+		} else if errors.As(err, &sshCmdErr) {
+			logging.Errorf("Error executing command %q on host %s:\n", sshCmdErr.Command, sshCmdErr.Host)
+			fmt.Print(sshCmdErr.Msg)
 		} else {
-			logging.Errorf("command failed: %s", err)
+			logging.Error(err.Error())
 		}
 		os.Exit(1)
 	}

@@ -62,7 +62,7 @@ func TestHistorySort(t *testing.T) {
 
 	app.sortHistory()
 
-	var historyData []History
+	var historyData []HistoryEntry
 	err = json.Unmarshal(testHistoryData, &historyData)
 	assert.NoError(t, err)
 

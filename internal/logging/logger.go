@@ -82,6 +82,12 @@ func New(out io.Writer, level Level) *Logger {
 	}
 }
 
+func (l *Logger) SetLevel(level Level) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.level = level
+}
+
 func Debug(msg string) {
 	Default().logMessage(LevelDebug, msg)
 }

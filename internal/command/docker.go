@@ -2,8 +2,6 @@ package command
 
 import (
 	"fmt"
-
-	"al.essio.dev/pkg/shellescape"
 )
 
 func IsDockerInstalled() string {
@@ -80,14 +78,13 @@ func ContainerLogs(container string, follow bool, lines int, since string) strin
 	)
 }
 
-func RegistryLogin(registry, user, password string) string {
+func RegistryLogin(registry, user string) string {
 	return Docker(
 		"login",
+		registry,
 		"-u",
 		user,
-		"-p",
-		shellescape.Quote(password),
-		registry,
+		"--password-stdin",
 	)
 }
 

@@ -17,20 +17,20 @@ const (
 	defautlHistoryFilePath = "~/.faino/history.json"
 )
 
-type History struct {
+type HistoryEntry struct {
 	Version   string    `json:"version"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
 // ByDateAsc is a helper type for History slice that implements sort.Interface
-type ByDateAsc []History
+type ByDateAsc []HistoryEntry
 
 func (a ByDateAsc) Len() int           { return len(a) }
 func (a ByDateAsc) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByDateAsc) Less(i, j int) bool { return a[i].Timestamp.Before(a[j].Timestamp) }
 
 // ByDateDesc is a helper type for History slice that implements sort.Interface
-type ByDateDesc []History
+type ByDateDesc []HistoryEntry
 
 func (a ByDateDesc) Len() int           { return len(a) }
 func (a ByDateDesc) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
@@ -77,7 +77,7 @@ func (app *App) LoadHistory(ctx context.Context) error {
 }
 
 func (app *App) loadHistory(raw []byte) error {
-	var h []History
+	var h []HistoryEntry
 	err := json.Unmarshal(raw, &h)
 	if err != nil {
 		return fmt.Errorf("corrupted history file: %w", err)
@@ -99,7 +99,7 @@ func (app *App) sortHistory() {
 }
 
 func (app *App) AppendVersion(version string) txman.Callback {
-	h := History{
+	h := HistoryEntry{
 		Version:   version,
 		Timestamp: time.Now(),
 	}

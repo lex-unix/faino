@@ -26,7 +26,7 @@ type App struct {
 	txmanager txman.Service
 	lexec     localexec.Service
 
-	history         []History
+	history         []HistoryEntry
 	historySorted   bool
 	historyFilePath string
 }
@@ -54,10 +54,7 @@ func generateRandomString(length int) string {
 	return string(b)
 }
 
-type HostOutput struct {
-	Host   string
-	Output string
-}
+type HostOutput map[string]string
 
 func (app *App) Deploy(ctx context.Context) error {
 	cfg := config.Get()
@@ -198,7 +195,7 @@ func (app *App) Rollback(ctx context.Context, version string) error {
 		return fmt.Errorf("failed to read history at %s: %w", app.historyFilePath, err)
 	}
 
-	found := slices.IndexFunc(app.history, func(h History) bool { return h.Version == version })
+	found := slices.IndexFunc(app.history, func(h HistoryEntry) bool { return h.Version == version })
 	if found < 0 {
 		return fmt.Errorf("version %s does not exist", version)
 	}
@@ -244,7 +241,7 @@ func (app *App) Rollback(ctx context.Context, version string) error {
 	return nil
 }
 
-func (app *App) History(ctx context.Context, sortDir string) ([]History, error) {
+func (app *App) History(ctx context.Context, sortDir string) ([]HistoryEntry, error) {
 	if err := app.LoadHistory(ctx); err != nil {
 		return nil, err
 	}
@@ -323,10 +320,10 @@ func (app *App) RegistryLogin(ctx context.Context) error {
 
 	registry := cfg.Registry.Server
 	username := cfg.Registry.Username
-	password := cfg.Registry.Password
+	password := strings.NewReader(cfg.Registry.Password) // read password from stdin
 
 	return app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
-		err := client.Run(ctx, command.RegistryLogin(registry, username, password))
+		err := client.Run(ctx, command.RegistryLogin(registry, username), sshexec.WithStdin(password))
 		if err != nil {
 			return fmt.Errorf("failed to login to registry: %s", err)
 		}
@@ -384,29 +381,50 @@ func (app *App) RebootProxy(ctx context.Context) error {
 	})
 }
 
-func (app *App) ExecService(ctx context.Context, execCmd string, interactive bool) error {
+func (app *App) ExecServiceInteractive(ctx context.Context, execCmd string) error {
 	if err := app.LoadHistory(ctx); err != nil {
 		return err
 	}
 	cfg := config.Get()
 	container := fmt.Sprintf("%s-%s", cfg.Service, app.LatestVersion())
-	return app.exec(ctx, container, execCmd, interactive)
+	return app.execInteractive(ctx, container, execCmd)
 }
 
-func (app *App) ExecProxy(ctx context.Context, execCmd string, interactive bool) error {
+func (app *App) ExecService(ctx context.Context, execCmd string) (HostOutput, error) {
 	if err := app.LoadHistory(ctx); err != nil {
-		return err
+		return HostOutput{}, err
 	}
-	return app.exec(ctx, config.Get().Proxy.Container, execCmd, interactive)
+	cfg := config.Get()
+	container := fmt.Sprintf("%s-%s", cfg.Service, app.LatestVersion())
+	return app.exec(ctx, container, execCmd)
 }
 
-func (app *App) exec(ctx context.Context, container string, execCmd string, interactive bool) error {
-	return app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
-		sessionOption := []sshexec.SessionOption{}
-		if interactive {
-			sessionOption = append(sessionOption, sshexec.WithPty())
+func (app *App) ExecProxyInteractive(ctx context.Context, execCmd string) error {
+	return app.execInteractive(ctx, config.Get().Proxy.Container, execCmd)
+}
+
+func (app *App) ExecProxy(ctx context.Context, execCmd string) (HostOutput, error) {
+	return app.exec(ctx, config.Get().Proxy.Container, execCmd)
+}
+
+func (app *App) exec(ctx context.Context, container string, execCmd string) (HostOutput, error) {
+	output := HostOutput{}
+	err := app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
+		var out bytes.Buffer
+		err := client.Run(ctx, command.Exec(container, execCmd, false), sshexec.WithStdout(&out))
+		if err != nil {
+			return err
 		}
-		return client.Run(ctx, command.Exec(container, execCmd, interactive), sessionOption...)
+		output[client.Host()] = out.String()
+		return nil
+	})
+
+	return output, err
+}
+
+func (app *App) execInteractive(ctx context.Context, container string, execCmd string) error {
+	return app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
+		return client.Run(ctx, command.Exec(container, execCmd, true), sshexec.WithPty())
 	})
 }
 

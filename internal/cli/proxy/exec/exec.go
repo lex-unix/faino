@@ -3,8 +3,10 @@ package exec
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/lex-unix/faino/internal/cli/cliutil"
+	"github.com/lex-unix/faino/internal/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -26,14 +28,26 @@ func NewCmdExec(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 			if opts.interactive && opts.host == "" {
 				return fmt.Errorf("--interactive must be used with --host flag")
 			}
+
+			logging.Default().SetLevel(logging.LevelError)
+
 			app, err := f.App()
 			if err != nil {
 				return err
 			}
 
-			if err := app.ExecProxy(ctx, args[0], opts.interactive); err != nil {
+			remoteCommand := args[0]
+
+			if opts.interactive {
+				return app.ExecProxyInteractive(ctx, remoteCommand)
+			}
+
+			output, err := app.ExecProxy(ctx, remoteCommand)
+			if err != nil {
 				return err
 			}
+
+			cliutil.PrintOutput(output, os.Stdout)
 
 			return nil
 		},

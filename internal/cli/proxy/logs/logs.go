@@ -11,6 +11,7 @@ type LogsOptions struct {
 	Follow bool
 	Lines  int
 	Since  string
+	Grep   string
 }
 
 func NewCmdLogs(ctx context.Context, f *cliutil.Factory) *cobra.Command {
@@ -24,7 +25,7 @@ func NewCmdLogs(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 				return err
 			}
 
-			if err := app.ProxyLogs(ctx, opts.Follow, opts.Lines, opts.Since); err != nil {
+			if err := app.ProxyLogs(ctx, opts.Follow, opts.Lines, opts.Since, opts.Grep); err != nil {
 				return err
 			}
 			return nil
@@ -34,6 +35,7 @@ func NewCmdLogs(ctx context.Context, f *cliutil.Factory) *cobra.Command {
 	cmd.PersistentFlags().BoolVarP(&opts.Follow, "follow", "f", false, "Follow logs on servers")
 	cmd.PersistentFlags().IntVarP(&opts.Lines, "lines", "n", 100, "Number of lines to show from each server")
 	cmd.PersistentFlags().StringVar(&opts.Since, "since", "", "Show lines since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)")
+	cmd.PersistentFlags().StringVar(&opts.Grep, "grep", "", "Search for string in log lines")
 
 	return cmd
 }

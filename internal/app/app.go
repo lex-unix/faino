@@ -265,19 +265,19 @@ func (app *App) ShowProxyInfo(ctx context.Context) (map[string]string, error) {
 	return app.showInfo(ctx, container)
 }
 
-func (app *App) ServiceLogs(ctx context.Context, follow bool, lines int, since string) error {
+func (app *App) ServiceLogs(ctx context.Context, follow bool, lines int, since string, grep string) error {
 	cfg := config.Get()
 	if err := app.LoadHistory(ctx); err != nil {
 		return err
 	}
 
 	container := fmt.Sprintf("%s-%s", cfg.Service, app.LatestVersion())
-	return app.logs(ctx, container, follow, lines, since)
+	return app.logs(ctx, container, follow, lines, since, grep)
 }
 
-func (app *App) ProxyLogs(ctx context.Context, follow bool, lines int, since string) error {
+func (app *App) ProxyLogs(ctx context.Context, follow bool, lines int, since string, grep string) error {
 	container := config.Get().Proxy.Container
-	return app.logs(ctx, container, follow, lines, since)
+	return app.logs(ctx, container, follow, lines, since, grep)
 }
 
 func (app *App) StopService(ctx context.Context) error {
@@ -434,10 +434,14 @@ func (app *App) logs(
 	follow bool,
 	lines int,
 	since string,
+	grep string,
 ) error {
+	needle := []byte(grep)
 	err := app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
 		var lineHandler stream.LineHandler = func(line []byte) {
-			logging.InfoHost(client.Host(), string(line))
+			if len(needle) == 0 || bytes.Contains(line, needle) {
+				logging.InfoHost(client.Host(), string(line))
+			}
 		}
 		var streamErrHandler stream.StreamErrHandler = func(err error) {
 			logging.ErrorHostf(client.Host(), "stream: %s", err)

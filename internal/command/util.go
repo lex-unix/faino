@@ -79,6 +79,19 @@ func expandSecrets(secrets map[string]string) string {
 	})
 }
 
+func expandVolumes(volumes []string) string {
+	var sb strings.Builder
+	for i, v := range volumes {
+		if i != 0 {
+			sb.WriteString(" ")
+		}
+		sb.WriteString("--volume ")
+		sb.WriteString(v)
+	}
+
+	return sb.String()
+}
+
 func platformFromArch(archs []string) string {
 	var sb strings.Builder
 	for i, arch := range archs {

@@ -32,13 +32,14 @@ func RemoveContainer(container string) string {
 	return fmt.Sprintf("docker rm %s", container)
 }
 
-func RunContainer(img, container, service string, env map[string]string) string {
+func RunContainer(img, container, service string, env map[string]string, volumes []string) string {
 	return Docker(
 		"run -d",
 		expandEnv(env),
 		"--label traefik.enable=true",
 		fmt.Sprintf("--label traefik.http.routers.%s.entrypoints=web", service),
 		fmt.Sprintf("--label traefik.http.routers.%s.rule='PathPrefix(`/`)'", service),
+		expandVolumes(volumes),
 		"--name", container,
 		img,
 	)

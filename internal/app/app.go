@@ -146,15 +146,15 @@ func (app *App) Deploy(ctx context.Context) error {
 	}
 
 	rollback, err := app.txmanager.BeginTransaction(ctx, func(ctx context.Context, tx txman.Transaction) error {
-		err := tx.Do(ctx, PullImage(image), nil)
+		err := tx.Run(ctx, command.PullImage(image), "")
 		if err != nil {
 			return err
 		}
-		err = tx.Do(ctx, StopContainer(currentContainer), StartContainer(currentContainer))
+		err = tx.Run(ctx, command.StopContainer(currentContainer), command.StartContainer(currentContainer))
 		if err != nil {
 			return err
 		}
-		err = tx.Do(ctx, RunContainer(image, newContainer, cfg.Env), StopContainer(newContainer))
+		err = tx.Run(ctx, command.RunContainer(image, newContainer, cfg.Service, cfg.Env, cfg.Volumes), command.StopContainer(newContainer))
 		if err != nil {
 			return err
 		}
@@ -213,11 +213,11 @@ func (app *App) Rollback(ctx context.Context, version string) error {
 	newContainer := fmt.Sprintf("%s-%s", service, version)
 
 	rollback, err := app.txmanager.BeginTransaction(ctx, func(ctx context.Context, tx txman.Transaction) error {
-		err := tx.Do(ctx, StopContainer(currentContainer), StartContainer(currentContainer))
+		err := tx.Run(ctx, command.StopContainer(currentContainer), command.StartContainer(currentContainer))
 		if err != nil {
 			return err
 		}
-		err = tx.Do(ctx, StartContainer(newContainer), StopContainer(newContainer))
+		err = tx.Run(ctx, command.StartContainer(newContainer), command.StopContainer(newContainer))
 		if err != nil {
 			return err
 		}

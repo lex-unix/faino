@@ -4,36 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lex-unix/faino/internal/command"
-	"github.com/lex-unix/faino/internal/config"
 	"github.com/lex-unix/faino/internal/exec/sshexec"
 	"github.com/lex-unix/faino/internal/txman"
 )
-
-func PullImage(img string) txman.Callback {
-	return func(ctx context.Context, client sshexec.Service) error {
-		return client.Run(ctx, command.PullImage(img))
-	}
-}
-
-func RunContainer(img, container string, env map[string]string) txman.Callback {
-	service := config.Get().Service
-	return func(ctx context.Context, client sshexec.Service) error {
-		return client.Run(ctx, command.RunContainer(img, container, service, env))
-	}
-}
-
-func StopContainer(containerName string) txman.Callback {
-	return func(ctx context.Context, client sshexec.Service) error {
-		return client.Run(ctx, command.StopContainer(containerName))
-	}
-}
-
-func StartContainer(containerName string) txman.Callback {
-	return func(ctx context.Context, client sshexec.Service) error {
-		return client.Run(ctx, command.StartContainer(containerName))
-	}
-}
 
 type RemoteFileContent struct {
 	host string

@@ -43,6 +43,7 @@ type Proxy struct {
 	Img       string         `koanf:"image"`
 	Args      map[string]any `koanf:"args"`
 	Labels    map[string]any `koanf:"labels"`
+	Volumes   []string       `koanf:"volumes"`
 }
 
 type SSH struct {
@@ -82,6 +83,7 @@ type Config struct {
 	Build       Build             `koanf:"build"`
 	Debug       bool              `koanf:"debug"`
 	Env         map[string]string `koanf:"env"`
+	Volumes     []string          `koanf:"volumes"`
 }
 
 var k = koanf.New(".")
@@ -97,7 +99,13 @@ func Load(f *pflag.FlagSet) (*Config, error) {
 	k.Set("registry.server", defaultRegistryServer)
 	k.Set("debug", false)
 
-	if err := k.Load(file.Provider(fmt.Sprintf("%s.yaml", appName)), yaml.Parser()); err != nil {
+	configFile := fmt.Sprintf("%s.yaml", appName)
+
+	if _, err := os.Stat(configFile); err != nil && errors.Is(err, os.ErrNotExist) {
+		return nil, ErrNotExists
+	}
+
+	if err := k.Load(file.Provider(configFile), yaml.Parser()); err != nil {
 		return nil, err
 	}
 

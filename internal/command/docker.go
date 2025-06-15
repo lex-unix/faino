@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+func CreateNetwork() string {
+	return "docker network create faino"
+}
+
 func IsDockerInstalled() string {
 	return "docker -v"
 }
@@ -34,7 +38,7 @@ func RemoveContainer(container string) string {
 
 func RunContainer(img, container, service string, env map[string]string, volumes []string) string {
 	return Docker(
-		"run -d",
+		"run -d --network faino --restart unless-stopped",
 		expandEnv(env),
 		"--label traefik.enable=true",
 		fmt.Sprintf("--label traefik.http.routers.%s.entrypoints=web", service),
@@ -52,6 +56,7 @@ func StopContainer(container string) string {
 func RunProxy(img string, container string, labels map[string]any, args map[string]any) string {
 	return Docker(
 		"run -d -p 80:80 --volume /var/run/docker.sock:/var/run/docker.sock:ro",
+		"--network faino --restart unless-stopped",
 		"--name", container,
 		"--volume /var/run/docker.sock:/var/run/docker.sock:ro",
 		expandLabels(labels),

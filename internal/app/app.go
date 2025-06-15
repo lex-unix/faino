@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -179,13 +180,50 @@ func (app *App) Deploy(ctx context.Context) error {
 	return nil
 }
 
+// Setup should be safe to run multiple times without destructive opeations.
+// For example, if a history file is present, it must not overwrite it.
 func (app *App) Setup(ctx context.Context) error {
 	return app.txmanager.Execute(ctx, func(ctx context.Context, client sshexec.Service) error {
-		err := client.Run(ctx, command.Mkdir("~/.faino"))
+		err := client.Run(ctx, command.CreateNetwork())
+		if err != nil {
+			var sshErr *sshexec.CommandError
+			switch {
+			case errors.As(err, &sshErr):
+				if !strings.Contains(sshErr.Msg, "already exists") {
+					return err
+				}
+			default:
+				return err
+			}
+		}
+
+		err = client.Run(ctx, command.Mkdir("~/.faino"))
 		if err != nil {
 			return err
 		}
-		return client.Run(ctx, command.CreateFileWithContents(app.historyFilePath, "[]"))
+
+		// check if history file exists, create if doesn't
+		file, err := client.ReadFile(app.historyFilePath)
+		if err != nil {
+			var sshErr *sshexec.CommandError
+			switch {
+			case errors.As(err, &sshErr):
+				if strings.Contains(sshErr.Msg, "No such file or directory") {
+					return client.Run(ctx, command.CreateFileWithContents(app.historyFilePath, "[]"))
+				}
+			default:
+				return err
+			}
+		}
+
+		file = bytes.TrimSpace(file)
+
+		// if file exists but is empty, initialize it
+		if len(file) == 0 {
+			return client.Run(ctx, command.CreateFileWithContents(app.historyFilePath, "[]"))
+		}
+
+		return nil
 	})
 }
 

@@ -175,6 +175,9 @@ func (app *App) Deploy(ctx context.Context) error {
 		if err := rollback(rollbackCtx); err != nil {
 			return err
 		}
+
+		// return the original error that caused transaction to fail
+		return err
 	}
 
 	return nil
@@ -274,6 +277,9 @@ func (app *App) Rollback(ctx context.Context, version string) error {
 		if err := rollback(rollbackCtx); err != nil {
 			return err
 		}
+
+		// return the original error that caused transaction to fail
+		return err
 	}
 
 	return nil
